@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Cosmo 1504 Circle</title>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<style>
+			body {
+				margin: 0;
+				-webkit-user-select: none;
+				-webkit-tap-highlight-color: rgba(0,0,0,0);
+			}
+			div, img, canvas {
+				position: absolute;
+				overflow: hidden;
+				background-size: 100% auto;
+				background-repeat: no-repeat;
+				background-position: 0px 0px;
+				width: 672px;
+				height: 696px;
+			}
+			#circle {
+				width: 647px;
+				height: 647px;
+				top: 38px;
+				left: 12px;
+				background-image: url(i/circle.png);
+			}
+			#cover {
+				background-image: url(i/cover.png);
+			}
+		</style>
+		<script>
+			addEventListener("load", init, false);
+
+			function init() {
+				var widthOfScreen = 672;
+				var centerX = 334; centerY = 360;
+				var img = [
+						{min:0, max:52},
+						{min:52, max:104},
+						{min:104, max:156},
+						{min:156, max:208},
+						{min:208, max:260},
+						{min:260, max:312},
+						{min:312, max:360}
+				];
+				var angle = 0;
+				var curAngle = 0, tempAngle = 0;
+				var coordX = 0, coordY = 0;
+				var startArctangens, arctangens = 0;
+				var startAngle = 0;
+				var startX = 0, startY = 0;
+				var curId = img.length; // use curId = 0 if u havnt splashscreen
+				var nextId = img.length - 1; // 
+
+				var touchId;
+				var animation = 0;
+				var speed = 500;
+
+				var wrapper, circle, text, cover; 
+				wrapper = document.getElementById("wrapper");
+				circle = document.getElementById("circle");
+				text = document.getElementById("text");
+				cover = document.getElementById("cover");
+
+				cover.addEventListener("touchstart", catchCircle, false);
+				cover.addEventListener("touchmove", moveCircle, false);
+				cover.addEventListener("touchend", releaseCircle, false);
+
+				for (var i = 0; i <= img.length; i++) { // <=-1
+					var elem = document.createElement("div");
+					elem.id = "img" + i;
+					elem.style.backgroundImage = "url(i/img" + (i + 1) + ".png)";
+					elem.style.opacity = 0;
+					text.appendChild(elem);
+				}
+
+				document.getElementById("img" + curId).style.opacity = 1;
+
+				function catchCircle() {
+					event.preventDefault();
+					if (event.changedTouches.length != 1) { return; }
+					if (!touchId) {
+						touchId = event.targetTouches[0].identifier;
+						startY = event.targetTouches[0].pageY - centerY;
+						startX = event.targetTouches[0].pageX - centerX;
+						startArctangens = Math.atan(startY / startX);
+						if (startX < 0) {
+							startArctangens += Math.PI;
+						}
+						startAngle = startArctangens * 180 / Math.PI + 90;
+						draw();
+					}
+				}
+
+				function moveCircle() {
+					event.preventDefault();
+					if (event.changedTouches.length != 1 || event.changedTouches[0].identifier != touchId) { return; }
+					coordY = event.targetTouches[0].pageY - centerY;
+					coordX = event.targetTouches[0].pageX - centerX;
+					arctangens = Math.atan(coordY / coordX);
+					if (coordX < 0) {
+						arctangens += Math.PI;
+					}
+					tempAngle = arctangens * 180 / Math.PI + 90 - startAngle;
+					curAngle = angle + tempAngle;
+				}
+
+				function releaseCircle() {
+					if (event.changedTouches.length != 1 || event.changedTouches[0].identifier != touchId) { return; }
+					if (animation) {
+						window.webkitCancelAnimationFrame(animation);
+						animation = null;
+
+						cover.removeEventListener("touchstart", catchCircle, false);
+						cover.removeEventListener("touchmove", moveCircle, false);
+						cover.removeEventListener("touchend", releaseCircle, false);
+
+						curAngle = (img[img.length - 1 - curId].min + img[img.length - 1 - curId].max) / 2;
+						circle.style.webkitTransition = "-webkit-transform " + speed + "ms linear";
+						circle.style.webkitTransform = "rotate(" + curAngle + "deg)";
+						angle = curAngle;
+
+						setTimeout(function() {
+							circle.style.webkitTransition = "-webkit-transform 0s linear";
+							touchId = null;
+							cover.addEventListener("touchstart", catchCircle, false);
+							cover.addEventListener("touchmove", moveCircle, false);
+							cover.addEventListener("touchend", releaseCircle, false);
+						}, speed);
+					}
+					
+				}
+
+				function draw() {
+					if (curAngle >= 360) {
+						curAngle -= 360;
+					} else if (curAngle < 0) {
+						curAngle += 360;
+					}
+					nextId = img.length - 1 - Math.floor(curAngle / 52);
+					if (curId != nextId) {
+						document.getElementById("img" + curId).style.opacity = 0;
+						document.getElementById("img" + nextId).style.opacity = 1;
+					}
+					curId = nextId;
+					circle.style.webkitTransform = "rotate(" + curAngle.toFixed(4) + "deg)";
+					animation = webkitRequestAnimationFrame(draw);
+				}
+			}
+		</script>
+	</head>
+	<body>
+		<div id="wrapper">
+			<div id="circle"></div>
+			<div id="text"></div>
+			<div id="cover"></div>
+		</div>
+	</body>
+</html>
